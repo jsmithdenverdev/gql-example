@@ -1,0 +1,22 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -gcflags='all=-N -l' -o ./tmp/main ."
+bin = "./tmp/main"
+include_ext = ["go", "tpl", "tmpl", "html"]
+exclude_dir = ["assets", "tmp", "vendor"]
+delay = 1000 # ms
+
+[screen]
+clear_on_rebuild = true
+
+[log]
+time = true
+
+[misc]
+clean_on_exit = true
+
+[scripts]
+# Using delve for debugging support
+start = "dlv exec --headless --continue --accept-multiclient --api-version=2 --listen=:2345 ./tmp/main"

@@ -1,0 +1,5 @@
+%syntax-version=1.0.0
+%project=gql-example
+%uri=https://github.com/jsmithdenverdev/gql-example/
+
+appschema 2025-01-11T18:18:14Z Jake Smith <jsmithdenverdev@gmail.com> # Add app schema for all todo objects

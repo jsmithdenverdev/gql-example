@@ -1,0 +1,63 @@
+# docker-compose.yml
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: todos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrations:
+    build:
+      context: .
+      target: base # We only need sqitch from base
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/todos?sslmode=disable
+    volumes:
+      - ./deploy:/app/deploy
+      - ./revert:/app/revert
+      - ./verify:/app/verify
+      - ./sqitch.conf:/app/sqitch.conf
+      - ./sqitch.plan:/app/sqitch.plan
+    command: sqitch deploy --verify
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:
+    build:
+      context: .
+      target: dev
+    volumes:
+      - .:/app
+      - go-cache:/root/.cache/go-build
+      - go-modules:/go/pkg/mod
+    ports:
+      - "8080:8080" # API port
+      - "2345:2345" # Delve debugger port
+      - "6060:6060" # pprof port
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/todos?sslmode=disable
+      - GO_ENV=development
+    depends_on:
+      migrations:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+    # We'll use air for hot reload which will also run the delve debugger
+
+volumes:
+  postgres_data:
+  go-cache:
+  go-modules:
