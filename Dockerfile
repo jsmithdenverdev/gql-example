@@ -1,16 +1,9 @@
 # Shared base stage with core tools
-FROM golang:1.22-bullseye as base
+FROM golang:1.23.4-bullseye as base
 WORKDIR /app
 ENV CGO_ENABLED=0
 ENV GOOS=linux
-ENV GOARCH=amd64
-
-# Install sqitch and postgres client
-RUN apt-get update && apt-get install -y \
-    sqitch \
-    postgresql-client \
-    libdbd-pg-perl \
-    && rm -rf /var/lib/apt/lists/*
+ENV GOARCH=arm64
 
 # Module download stage
 FROM base AS modules
@@ -19,9 +12,8 @@ RUN go mod download
 
 # Development stage
 FROM modules as dev
-RUN go install github.com/cosmtrek/air@latest && \
-    go install github.com/go-delve/delve/cmd/dlv@latest && \
-    go install github.com/sqlc-dev/sqlc@latest
+RUN go install github.com/air-verse/air@latest && \
+    go install github.com/go-delve/delve/cmd/dlv@latest
 
 COPY .air.toml ./
 CMD ["air", "-c", ".air.toml"]

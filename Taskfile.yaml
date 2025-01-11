@@ -1,0 +1,67 @@
+version: "3"
+
+tasks:
+  default:
+    cmds:
+      - task --list-all
+    silent: true
+
+  up:
+    desc: Start the development environment
+    cmds:
+      - docker compose up --build -d
+
+  down:
+    desc: Stop the development environment
+    cmds:
+      - docker compose down
+
+  logs:
+    desc: Follow docker logs
+    cmds:
+      - docker compose logs -f
+
+  psql:
+    desc: Connect to postgres
+    cmds:
+      - docker compose exec db psql -U postgres -d todos
+
+  migrate:
+    desc: Run sqitch migrations
+    cmds:
+      - docker compose restart migrations
+
+  migrate:status:
+    desc: Check sqitch migration status
+    cmds:
+      - docker compose exec migrations sqitch status
+
+  migrate:revert:
+    desc: Revert last sqitch migration
+    cmds:
+      - docker compose exec migrations sqitch revert -y
+
+  shell:
+    desc: Shell into app container
+    cmds:
+      - docker compose exec app sh
+
+  clean:
+    desc: Clean up development environment
+    cmds:
+      - docker compose down -v --remove-orphans
+
+  restart:
+    desc: Restart the app container
+    cmds:
+      - docker compose restart app
+
+  test:
+    desc: Run tests
+    cmds:
+      - docker compose exec app go test ./...
+
+  build:
+    desc: Build the production image
+    cmds:
+      - docker build --target prod .

@@ -1,36 +1,46 @@
-# docker-compose.yml
-version: "3.8"
-
 services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_DB: todos
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
+    expose:
+      - 5432
     ports:
-      - "5432:5432"
+      - 5432:5432
     volumes:
+      - ./pg-init/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./pg-init/pg_hba.conf:/docker-entrypoint-initdb.d/pg_hba.conf
       - postgres_data:/var/lib/postgresql/data
+    command:
+      [
+        "postgres",
+        "-c",
+        "hba_file=/docker-entrypoint-initdb.d/pg_hba.conf",
+        "-c",
+        "log_statement=all",
+        "-c",
+        "listen_addresses=*",
+      ]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
+      start_period: 10s
       timeout: 5s
       retries: 5
 
   migrations:
     build:
       context: .
-      target: base # We only need sqitch from base
+      dockerfile: Dockerfile.migrations
     environment:
-      DATABASE_URL: postgres://postgres:postgres@db:5432/todos?sslmode=disable
+      PGPASSWORD: postgres
     volumes:
       - ./deploy:/app/deploy
       - ./revert:/app/revert
       - ./verify:/app/verify
       - ./sqitch.conf:/app/sqitch.conf
       - ./sqitch.plan:/app/sqitch.plan
-    command: sqitch deploy --verify
     depends_on:
       db:
         condition: service_healthy
@@ -55,7 +65,6 @@ services:
         condition: service_completed_successfully
       db:
         condition: service_healthy
-    # We'll use air for hot reload which will also run the delve debugger
 
 volumes:
   postgres_data:
